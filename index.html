@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手搖重症紀錄 🥤</title>
+    <style>
+        :root {
+            /* 🎨 色票設定：更柔和的寶寶藍與低彩度黑 */
+            --bg-color: #E3F2FD;        /* 極淡寶寶藍背景 */
+            --container-bg: #FFFFFF;    /* 純白容器 */
+            --text-main: #546E7A;       /* 低彩度藍灰黑 (主要文字) */
+            --text-light: #90A4AE;      /* 淺灰文字 */
+            --accent: #4FC3F7;          /* 亮眼天藍 */
+            --accent-hover: #29B6F6;
+            --highlight-day: #FFF9C4;   /* 鵝黃色 (今日) */
+            --border-color: #E1F5FE;
+            
+            /* 🍬 可愛圓角與陰影 */
+            --radius-l: 24px;
+            --radius-m: 16px;
+            --radius-s: 12px;
+            --shadow-soft: 0 8px 24px rgba(144, 202, 249, 0.25);
+            --shadow-card: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px 10px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 16px;
+        }
+
+        /* 🫧 背景裝飾符號 (固定位置) */
+        .decoration {
+            position: fixed;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.7;
+            font-size: 1.5rem;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .deco-dolphin {
+            bottom: 20px;
+            right: 20px;
+            font-size: 4rem;
+            animation: bounce 2s infinite ease-in-out;
+            z-index: 5;
+            opacity: 1;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* 📅 標題區域 */
+        header {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-shadow: 2px 2px 0px #FFF;
+        }
+
+        .month-control {
+            background: var(--container-bg);
+            padding: 8px 16px;
+            border-radius: 50px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .nav-btn {
+            background: #E1F5FE;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover { background: #B3E5FC; transform: scale(1.1); }
+
+        /* 🗓️ 月曆容器 (像一張小白紙) */
+        .calendar-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--container-bg);
+            border-radius: var(--radius-l);
+            box-shadow: var(--shadow-soft);
+            padding: 20px;
+            position: relative;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #78909C; /* 稍微淡一點的標題色 */
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        /* 🟩 日期格子 (可愛卡片風) */
+        .day {
+            background: #FAFAFA;
+            border: 2px solid transparent;
+            border-radius: var(--radius-m);
+            min-height: 110px; /* 確保高度足夠放兩行飲料 */
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day:hover {
+            transform: translateY(-3px);
+            background: #FFF;
+            box-shadow: 0 5px 15px rgba(79, 195, 247, 0.2);
+            border-color: #B3E5FC;
+        }
+
+        .day.today {
+            background-color: var(--highlight-day);
+            border: 2px solid #FFF176;
+        }
+
+        /* 日期數字 */
+        .day-number {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        
+        .today .day-number { color: #FBC02D; }
+
+        /* 🍹 月曆內的飲料清單 */
+        .day-drink-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .mini-drink-item {
+            font-size: 0.85rem; /* 字體適中 */
+            color: var(--text-main);
+            background: #E1F5FE;
+            padding: 4px 8px;
+            border-radius: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .mini-drink-item:nth-child(2) {
+            background: #ECEFF1; /* 第二杯底色稍微不同，區隔一下 */
+        }
+
+        /* 🔘 Modal 彈出視窗 (圓潤可愛) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(55, 71, 79, 0.4); /* 深藍灰半透明遮罩 */
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal {
+            background: #FFFFFF;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 28px; /* 超圓 */
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            background: #E1F5FE;
+            color: var(--text-main);
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: inline-block;
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: #F5F5F5;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: #B0BEC5;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .close-btn:hover { background: #FFEBEE; color: #EF5350; }
+
+        /* 輸入表單美化 */
+        .form-row { margin-bottom: 15px; }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            color: #78909C;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            background: #F9FAFB;
+            border: 2px solid #ECEFF1;
+            border-radius: 16px;
+            font-size: 1rem;
+            color: var(--text-main);
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            background: #FFF;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.1);
+        }
+
+        /* 糖度冰塊選單 */
+        .grid-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .grid-option {
+            padding: 10px;
+            text-align: center;
+            background: #FFF;
+            border: 2px solid #ECEFF1;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #90A4AE;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .grid-option.selected {
+            background: #E1F5FE;
+            border-color: var(--accent);
+            color: var(--accent-dark);
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(79, 195, 247, 0.2);
+        }
+
+        /* 底部按鈕 */
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.95); }
+
+        .btn-add {
+            background: var(--accent);
+            color: #FFF;
+            box-shadow: 0 4px 12px rgba(79, 195, 247, 0.4);
+        }
+        .btn-finish {
+            background: #ECEFF1;
+            color: var(--text-main);
+        }
+
+        /* 今日清單 */
+        .daily-list {
+            margin-top: 20px;
+            border-top: 2px dashed #ECEFF1;
+            padding-top: 15px;
+        }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #F9FAFB;
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .item-text strong { color: var(--text-main); }
+        .item-text span { font-size: 0.85rem; color: var(--text-light); }
+
+        /* 裝飾定位 */
+        .deco-1 { top: 15%; left: 5%; color: #81D4FA; }
+        .deco-2 { top: 25%; right: 8%; color: #FFF59D; text-shadow: 0 2px 5px rgba(255, 167, 38, 0.3); }
+        .deco-3 { bottom: 20%; left: 10%; font-size: 2rem; }
+        .deco-4 { top: 55%; left: 2%; color: #81D4FA; }
+
+        /* 手機 RWD */
+        @media (max-width: 600px) {
+            .calendar-grid { gap: 6px; }
+            .day { min-height: 80px; padding: 4px; border-radius: 12px; }
+            .mini-drink-item { font-size: 0.7rem; padding: 2px 4px; }
+            .weekdays { font-size: 0.9rem; }
+            .form-row { margin-bottom: 10px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 漂浮裝飾 -->
+    <div class="decoration deco-1">🫧</div>
+    <div class="decoration deco-2">✨</div>
+    <div class="decoration deco-3">🐈‍⬛</div>
+    <div class="decoration deco-4">🫧</div>
+    <div class="decoration deco-dolphin">🐬</div>
+
+    <header>
+        <h1>手搖重症紀錄 🥤</h1>
+        <div class="month-control">
+            <button class="nav-btn" id="prevMonth">❮</button>
+            <span id="currentMonthDisplay">2023年 10月</span>
+            <button class="nav-btn" id="nextMonth">❯</button>
+        </div>
+    </header>
+
+    <div class="calendar-container">
+        <div class="weekdays">
+            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- 月曆內容由 JS 生成 -->
+        </div>
+    </div>
+
+    <!-- 彈出輸入視窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <button class="close-btn" id="closeModal">✕</button>
+            <div class="modal-header">
+                <div class="modal-title" id="modalDateTitle">10月24日</div>
+            </div>
+
+            <form id="drinkForm">
+                <div class="form-row">
+                    <label>🏠 店家名稱</label>
+                    <input type="text" id="shopName" list="shopSuggestions" placeholder="選店家...">
+                    <datalist id="shopSuggestions">
+                        <option value="五十嵐"><option value="可不可"><option value="五桐號">
+                        <option value="龜記"><option value="麻古茶坊"><option value="迷客夏">
+                        <option value="得正"><option value="一沐日"><option value="八曜和茶">
+                    </datalist>
+                </div>
+
+                <div class="form-row">
+                    <label>🥤 飲料品項</label>
+                    <input type="text" id="drinkName" list="drinkSuggestions" placeholder="喝什麼呢...">
+                    <datalist id="drinkSuggestions">
+                        <option value="珍珠奶茶"><option value="四季春珍波椰"><option value="熟成紅茶">
+                        <option value="芝芝葡萄果粒"><option value="紅柚翡翠"><option value="烏龍拿鐵">
+                    </datalist>
+                </div>
+
+                <div class="form-row">
+                    <label>💰 價格</label>
+                    <input type="number" id="price" placeholder="$$">
+                </div>
+
+                <div class="form-row">
+                    <label>🍬 甜度</label>
+                    <div class="grid-selector" id="sugarSelector">
+                        <div class="grid-option" data-value="固定">固定</div>
+                        <div class="grid-option" data-value="無糖">無糖</div>
+                        <div class="grid-option" data-value="一分">一分</div>
+                        <div class="grid-option" data-value="微糖">微糖</div>
+                        <div class="grid-option" data-value="半糖">半糖</div>
+                        <div class="grid-option" data-value="少糖">少糖</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>🧊 冰量</label>
+                    <div class="grid-selector" id="iceSelector">
+                        <div class="grid-option" data-value="固定">固定</div>
+                        <div class="grid-option" data-value="少冰">少冰</div>
+                        <div class="grid-option" data-value="微冰">微冰</div>
+                        <div class="grid-option" data-value="去冰">去冰</div>
+                        <div class="grid-option" data-value="溫">溫</div>
+                        <div class="grid-option" data-value="熱">熱</div>
+                    </div>
+                </div>
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn btn-add" id="btnAdd">再添一杯 ➕</button>
+                <button class="btn btn-finish" id="btnFinish">完成 👌</button>
+            </div>
+
+            <div class="daily-list" id="dailyList">
+                <h4 style="margin:0 0 10px 0; color:#90A4AE;">📜 今日紀錄</h4>
+                <div id="listContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 初始化與全域變數
+        const STORAGE_KEY = 'bubble_tea_log_v3'; // 更新版本
+        let currentDate = new Date();
+        let selectedDateStr = null; 
+        let drinksData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+        // DOM 元素
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentMonthDisplay = document.getElementById('currentMonthDisplay');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalDateTitle = document.getElementById('modalDateTitle');
+        const shopInput = document.getElementById('shopName');
+        const drinkInput = document.getElementById('drinkName');
+        const priceInput = document.getElementById('price');
+        const listContainer = document.getElementById('listContainer');
+        
+        let currentSugar = '';
+        let currentIce = '';
+
+        // 2. 初始化執行
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCalendar();
+            setupEventListeners();
+        });
+
+        // 3. 事件監聽
+        function setupEventListeners() {
+            document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+            document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('btnFinish').addEventListener('click', closeModal);
+            
+            document.getElementById('btnAdd').addEventListener('click', () => {
+                if(addDrink()) {
+                    clearForm();
+                    renderList();
+                    renderCalendar(); 
+                }
+            });
+
+            // 糖度選擇
+            document.querySelectorAll('#sugarSelector .grid-option').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    document.querySelectorAll('#sugarSelector .grid-option').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    currentSugar = e.target.dataset.value;
+                });
+            });
+
+            // 冰量選擇
+            document.querySelectorAll('#iceSelector .grid-option').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    document.querySelectorAll('#iceSelector .grid-option').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    currentIce = e.target.dataset.value;
+                });
+            });
+
+            // 遮罩關閉
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) closeModal();
+            });
+        }
+
+        // 4. 渲染月曆 (核心邏輯)
+        function renderCalendar() {
+            calendarGrid.innerHTML = '';
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            currentMonthDisplay.textContent = `${year}年 ${month + 1}月`;
+
+            const firstDay = new Date(year, month, 1).getDay(); // 當月1號星期幾
+            const daysInMonth = new Date(year, month + 1, 0).getDate(); // 當月總天數
+            const today = new Date();
+
+            // 填充前置空白
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                calendarGrid.appendChild(empty);
+            }
+
+            // 建立日期
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayCell = document.createElement('div');
+                dayCell.classList.add('day');
+                
+                // 判斷今日
+                if (year === today.getFullYear() && month === today.getMonth() && i === today.getDate()) {
+                    dayCell.classList.add('today');
+                }
+
+                const dateStr = formatDateKey(year, month, i);
+                dayCell.addEventListener('click', () => openModal(dateStr, i));
+
+                // 日期數字
+                const numDiv = document.createElement('div');
+                numDiv.className = 'day-number';
+                numDiv.textContent = i;
+                dayCell.appendChild(numDiv);
+
+                // 飲料清單容器
+                const listDiv = document.createElement('div');
+                listDiv.className = 'day-drink-list';
+
+                if (drinksData[dateStr] && drinksData[dateStr].length > 0) {
+                    drinksData[dateStr].forEach((drink, index) => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'mini-drink-item';
+                        
+                        // 設定符號
+                        let icon = '🤍';
+                        if (index === 0) icon = '💙';
+                        else if (index === 1) icon = '🖤';
+                        
+                        // 顯示：符號 + 品名
+                        itemDiv.textContent = `${icon} ${drink.item}`;
+                        listDiv.appendChild(itemDiv);
+                    });
+                }
+                dayCell.appendChild(listDiv);
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        // 5. Modal 相關函式
+        function openModal(dateStr, dayNum) {
+            selectedDateStr = dateStr;
+            modalDateTitle.textContent = `${currentDate.getMonth() + 1}月${dayNum}日 📝`;
+            modalOverlay.classList.add('active');
+            clearForm();
+            renderList();
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            renderCalendar(); // 關閉時重新渲染，確保資料同步
+        }
+
+        function clearForm() {
+            shopInput.value = '';
+            drinkInput.value = '';
+            priceInput.value = '';
+            currentSugar = '';
+            currentIce = '';
+            document.querySelectorAll('.grid-option').forEach(el => el.classList.remove('selected'));
+        }
+
+        function addDrink() {
+            if (!shopInput.value.trim() || !drinkInput.value.trim()) {
+                alert('店家和飲料名稱都要填寫喔！🐈‍⬛');
+                return false;
+            }
+
+            const newDrink = {
+                id: Date.now(),
+                shop: shopInput.value,
+                item: drinkInput.value, // 品項
+                price: priceInput.value || 0,
+                sugar: currentSugar || '?',
+                ice: currentIce || '?'
+            };
+
+            if (!drinksData[selectedDateStr]) {
+                drinksData[selectedDateStr] = [];
+            }
+
+            drinksData[selectedDateStr].push(newDrink);
+            saveData();
+            return true;
+        }
+
+        function deleteDrink(id) {
+            if (drinksData[selectedDateStr]) {
+                drinksData[selectedDateStr] = drinksData[selectedDateStr].filter(d => d.id !== id);
+                if (drinksData[selectedDateStr].length === 0) {
+                    delete drinksData[selectedDateStr];
+                }
+                saveData();
+                renderList();
+            }
+        }
+
+        function renderList() {
+            listContainer.innerHTML = '';
+            const list = drinksData[selectedDateStr] || [];
+            
+            if (list.length === 0) {
+                listContainer.innerHTML = '<div style="color:#B0BEC5;text-align:center;padding:15px;">今天還沒喝飲料...<br>真的不來一杯嗎？🥤</div>';
+                return;
+            }
+
+            list.forEach((drink, index) => {
+                const el = document.createElement('div');
+                el.className = 'list-item';
+                
+                let icon = '🤍';
+                if (index === 0) icon = '💙';
+                else if (index === 1) icon = '🖤';
+                
+                el.innerHTML = `
+                    <div class="item-text">
+                        <strong>${icon} ${drink.shop}</strong> - ${drink.item} <br>
+                        <span>${drink.sugar} / ${drink.ice} / $${drink.price}</span>
+                    </div>
+                    <button onclick="deleteDrink(${drink.id})" style="border:none;background:none;color:#CFD8DC;cursor:pointer;font-size:1.2rem;">×</button>
+                `;
+                listContainer.appendChild(el);
+            });
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(drinksData));
+        }
+
+        function formatDateKey(year, month, day) {
+            return `${year}-${month + 1}-${day}`;
+        }
+    </script>
+</body>
+</html>
